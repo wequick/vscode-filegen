@@ -1,7 +1,7 @@
 {
-	"name": "cpp-class-creator",
+	"name": "cpp-creator",
 	"displayName": "C++ Class Creator",
-	"description": "A very simple class creation extension for Visual Studio Code from FleeXo",
+	"description": "A simple class creation extension support Google Style and UnitTest",
 	"publisher": "Wequick",
 	"icon": "icon/logo.png",
 	"repository": {
@@ -15,27 +15,45 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:extension.createClass"
+		"onCommand:extension.createClassAndUnitTest",
+		"onCommand:extension.createClass",
+		"onCommand:extension.createUnitTest"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
+				"title": "Create C++ Class & UnitTest",
+				"command": "extension.createClassAndUnitTest"
+			},
+			{
 				"title": "Create C++ Class",
 				"command": "extension.createClass"
+			},
+			{
+				"title": "Create C++ UnitTest",
+				"command": "extension.createUnitTest"
 			}
 		],
 		"menus": {
 			"explorer/context": [
 				{
+					"group": "navigation@-2",
+					"command": "extension.createClassAndUnitTest"
+				},
+				{
 					"group": "navigation@-1",
 					"command": "extension.createClass"
+				},
+				{
+					"group": "navigation@-1",
+					"command": "extension.createUnitTest"
 				}
 			]
 		},
 		"keybindings": [
 			{
-				"command": "extension.createClass",
+				"command": "extension.createClassAndUnitTest",
 				"key": "alt+x",
 				"when": "editorTextFocus"
 			}

@@ -1,8 +1,7 @@
 # A simple C++ Class Creator with multiple settings :alien:
 
-Hey I'm Maxim. I wanted created a little c++ extension to create classes.
-
-I can work on it when I have time in order to improve it. Just open some Issues or Pull Request. Im happy to work on them!
+Fork from https://github.com/tzAcee/cpp-class-creator v1.0
+Rewrite by Galen Lin, <oolgloo.2012@gmail.com>
 
 ## Info about v1.0
 

@@ -41,4 +41,11 @@ export abstract class vscode_helper
         }
         return true;
     }
+    public static workspace(): string | undefined {
+        let wfs = vscode.workspace.workspaceFolders;
+        if (wfs) {
+            return wfs[0].uri.fsPath;
+        }
+        return undefined;
+    }
 }
