@@ -1,11 +1,11 @@
 {
-	"name": "cpp-creator",
-	"displayName": "C++ Class Creator",
-	"description": "A simple class creation extension support Google Style and UnitTest",
+	"name": "filegen",
+	"displayName": "Code File Generator",
+	"description": "Create files in your format. Supported generator: C++ Class & UnitTest file with Google Style. More coming soon.",
 	"publisher": "Wequick",
 	"icon": "icon/logo.png",
 	"repository": {
-		"url": "https://github.com/wequick/vsext-cpp-class-creator.git"
+		"url": "https://github.com/wequick/vscode-filegen.git"
 	},
 	"version": "1.0.0",
 	"engines": {
@@ -14,11 +14,17 @@
 	"categories": [
 		"Other"
 	],
-	"activationEvents": [
-		"onCommand:extension.createClassAndUnitTest",
-		"onCommand:extension.createClass",
-		"onCommand:extension.createUnitTest"
+	"keywords": [
+		"generator",
+		"c++",
+		"class",
+		"unittest",
+		"file",
+		"template",
+		"google",
+		"style"
 	],
+	"activationEvents": ["onStartupFinished"],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
@@ -69,43 +75,14 @@
 		],
 		"configuration": [
 			{
-				"title": "C++ Class Creator",
+				"title": "File Generator",
 				"properties": {
-					"cpp.creator.setPath": {
+					"filegen.templatePath": {
 						"type": [
-							"string",
-							"null",
-							"boolean"
+							"string"
 						],
-						"default": null,
-						"description": "Specifies the path, where the class is created or set it to true when you want the path to be dynamically inputted. [setting: cpp.creator.setPath = \"path\" or true]"
-					},
-					"cpp.creator.headerFileContentPreset": {
-						"type": "string",
-						"editPresentation": "multilineText",
-						"default": "#ifndef {{*CLASSNAMEUPPER*}}_H\n#define {{*CLASSNAMEUPPER*}}_H\n\n#pragma once\n\nclass {{*CLASSNAME*}}\n{\npublic:\n    {{*CLASSNAME*}}();\n    ~{{*CLASSNAME*}}();\n\nprivate:\n\n};\n\n#endif",
-						"description": "Content of your created header file. \nAvailable commands are:\n{{*CLASSNAME*}} - entered classname.\n{{*CLASSNAMEUPPER*}} - entered classname in upper-case letters.\n{{*CLASSNAMELOWER*}} - entered classname in lower-case letters.\n{{*CLASSNAMELOWER*}} - entered classname in lower-case letters.\n{{*CLASSNAMECAPI*}} - default classname with capitalized first letter.\n{{*HEADERFILENAME*}} - default headerfilename as entered in the settings. \n{{*SOURCEFILENAME*}} - default sourcefilename as entered in the settings."
-					},
-					"cpp.creator.sourceFileContentPreset": {
-						"type": "string",
-						"editPresentation": "multilineText",
-						"default": "#include \"{{*HEADERFILENAME*}}\"\n\n{{*CLASSNAME*}}::{{*CLASSNAME*}}()\n{\n\n}\n\n{{*CLASSNAME*}}::~{{*CLASSNAME*}}()\n{\n\n}",
-						"description": "Content of your created source file. \nAvailable commands are:\n{{*CLASSNAME*}} - entered classname.\n{{*CLASSNAMEUPPER*}} - entered classname in upper-case letters.\n{{*CLASSNAMELOWER*}} - entered classname in lower-case letters.\n{{*CLASSNAMECAPI*}} - default classname with capitalized first letter.\n{{*HEADERFILENAME*}} - default headerfilename as entered in the settings. \n{{*SOURCEFILENAME*}} - default sourcefilename as entered in the settings."
-					},
-					"cpp.creator.sourceFileNamePreset": {
-						"type": "string",
-						"default": "{{*CLASSNAME*}}.cpp",
-						"description": "Name of your source file. \nAvailable commands are:\n{{*CLASSNAME*}} - entered classname.\n{{*CLASSNAMEUPPER*}} - entered classname in upper-case letters.\n{{*CLASSNAMELOWER*}} - entered classname in lower-case letters."
-					},
-					"cpp.creator.headerFileNamePreset": {
-						"type": "string",
-						"default": "{{*CLASSNAME*}}.h",
-						"description": "Name of your header file. \nAvailable commands are:\n{{*CLASSNAME*}} - entered classname.\n{{*CLASSNAMEUPPER*}} - entered classname in upper-case letters.\n{{*CLASSNAMELOWER*}} - entered classname in lower-case letters."
-					},
-					"cpp.creator.createFolder": {
-						"type": "boolean",
-						"default": false,
-						"description": "Create an extra folder for the class."
+						"default": "filegen",
+						"description": "Specifies the path, where the template files located in."
 					}
 				}
 			}

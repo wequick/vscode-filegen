@@ -23,10 +23,16 @@ export abstract class regex_commands
             }
             return s;
         }
-        return 'acg';
+        return '';
     }
     static namespace(root_dir: string|undefined, namespace: string | undefined): string {
-        return this.module(root_dir, namespace);
+        return this.module(root_dir, namespace).replace(/-/g, '_');
+    }
+    static module_include(module: string | undefined): string {
+        if (module && module != '') {
+            return '#include <' + module + '/' + module + '.h>\n'
+        }
+        return ''
     }
     static header_path(root_dir: string, create_location: string, header_file: string): string {
         let folder;
@@ -57,11 +63,11 @@ export abstract class regex_commands
         s = s.replace(".h", "_H_").replace(/\//g, "_").toUpperCase();
         return s;
     }
-    static company(cp: string|undefined): string {
-        return cp || "Alibaba";
+    static organization(cp: string|undefined): string {
+        return cp || "Unknown";
     }
     static user(user: string|undefined): string {
-        return user || "Galen Lin";
+        return user || "Unknown";
     }
     static date(date: Date): string {
         let s: string = "";
@@ -100,7 +106,7 @@ export abstract class regex_commands
         return str.toUpperCase();
     }
 
-    public static capitalize(str: string) : string
+    public static camel(str: string) : string
     {
         let name = str[0].toUpperCase() + str.substring(1);
         return name.replace(/\_(\w)/g, function(all, letter){

@@ -1,109 +1,125 @@
-# A simple C++ Class Creator with multiple settings :alien:
+# VSCode File Generator
 
-Fork from https://github.com/tzAcee/cpp-class-creator v1.0
-Rewrite by Galen Lin, <oolgloo.2012@gmail.com>
+Create files in your format.
 
-## Info about v1.0
+Supported generators:
+* C++ Class & UnitTest file with Google Style.
+* TODO: more
 
-In order to increase the flexiblity I implemented a command pattern which can be used to customize own presets for header/source files and it's names. For that I removed all customization options which I added in version <1.0. All of this options can be replaced with the new way of handling the files.
+## Configuration
 
-The syntax is {{\*COMMAND\*}} eg. {{\*CLASSNAME\*}}
+### filegen.json
 
-#### Available Commands:
+Create in your project root.
 
-For file name presets: 
-- CLASSNAMEUPPER - default classname to upper
-- CLASSNAMELOWER - default classname to lower
-- CLASSNAMECAPI  - default classname with capitalized first letter
-- CLASSNAME      - default classname
-
-For file content presets:
-
-- HEADERFILENAME - default headerfilename as entered in settings
-- SOURCEFILENAME - default sourcefilename as entered in settings
-- CLASSNAMEUPPER - default classname to upper
-- CLASSNAMELOWER - default classname to lower
-- CLASSNAMECAPI  - default classname with capitalized first letter
-- CLASSNAME      - default classname
-
-
-## Features
-
-Press **Alt**+**X** to open the Input Field to create a class, <span style="color:red">**while you are focusing the editor!**</span>
-
-Type in the name, and there you go. You will directly see, when the file is created.
-
-Additionaly you can set the path where the file has to be created and customize your own header/source file preset: check Settings at the bottom.
-
-![Demo](https://github.com/tzAcee/cpp-class-creator/blob/master/giphy.gif?raw=true)
-
-## Settings [settings.json of VS-Code]
-
-```"cpp.creator.headerFileContentPreset": = "string"``` customize your created headerfile content with this setting. 
-
-Default is:
-```
-   #ifndef {{*CLASSNAMEUPPER*}}_H
-   #define {{*CLASSNAMEUPPER*}}_H
-   
-   #pragma once
-   
-   class {{*CLASSNAME*}}
-   {
-      public:
-          {{*CLASSNAME*}}();
-          ~{{*CLASSNAME*}}();
-      private:
-   };
-   
-   #endif
+```json
+{
+   "module": "mymodule",  // The C++ modalar header
+   "namespace": "wq",  // The C++ class namespace
+   "organization": "Wequick",  // The organization show in copyright
+}
 ```
 
-```"cpp.creator.sourceFileContentPreset": = "string"``` customize your created sourcefile content with this setting. 
+### template files
 
-Default is:
+Depending on your platform, the global template path is located here:
+
+* Windows %APPDATA%\Code\User\globalStorage\wequick.filegen.
+* macOS $HOME/Library/Application\ Support/Code/User/globalStorage/wequick.filegen.
+* Linux $HOME/.config/Code/User/globalStorage/wequick.filegen.
+
+Or you can create `filegen` folder in your project root to overwrite.
+
+Files:
 ```
-   #include "{{*HEADERFILENAME*}}"
-   {{*CLASSNAME*}}::{{*CLASSNAME*}}()
-   {
-
-   }
-   
-   {{*CLASSNAME*}}::~{{*CLASSNAME*}}()
-   {
-
-   }
-```
-
-```"cpp.creator.sourceFileNamePreset": = "string"``` customize your sourcefile name with this setting.
-
-Default is:
-```
-   {{*CLASSNAME*}}.cpp
+filegen
+  |____${FILENAME}.h            // [cpp] header file
+  |____${FILENAME}.cc           // [cpp] source file
+  |____${FILENAME}_unittest.cc  // [cpp] unittest file
 ```
 
-```"cpp.creator.headerFileNamePreset": = "string"``` customize your headerfile name with this setting.
+#### [cpp] header file
 
-Default is:
+Default as:
+
+```cpp
+//
+// Created by ${USER} on ${DATE}.
+// Copyright (c) ${YEAR} ${ORGANIZATION}. All rights reserved.
+//
+
+#ifndef ${HEADER_GUARD}
+#define ${HEADER_GUARD}
+
+#include <cstring>
+
+namespace ${NAMESPACE} {
+
+class ${CLASSNAME} {
+ public:
+  
+ private:
+};
+
+}  // namespace ${NAMESPACE}
+
+#endif  // ${HEADER_GUARD}"
+
 ```
-   {{*CLASSNAME*}}.h
+
+#### [cpp] source file
+
+Default as:
+
+```cpp
+//
+// Created by ${USER} on ${DATE}.
+// Copyright (c) ${YEAR} ${ORGANIZATION}. All rights reserved.
+//
+
+#include "${HEADER_PATH}"
+
+namespace ${NAMESPACE} {
+
+
+}  // namespace ${NAMESPACE}
+
 ```
 
-```"cpp.creator.setPath": = "string" | null | boolean : [NULL by default] ``` set your path where the class should be created as a string. When it's null your class will be created in the current workspace. Set it to true, when you want a input window to appear on every class creation where you can set creation path. On false or on an empty path input box it will also be created in the current workspace.
+#### [cpp] unittest file
 
-```"cpp.creator.createFolder": = boolean : [FALSE by default] ``` set it to true, so a folder for the class will be created in your workspace -> Only possible when setPath is null.
+Default as:
 
----
+```cpp
+//
+// Created by ${USER} on ${DATE}.
+// Copyright (c) ${YEAR} ${ORGANIZATION}. All rights reserved.
+//
 
-Have fun.
+#include <gtest/gtest.h>
+${MODULE_INCLUDE}
 
-Make Pull Request when you have feature ideas & if you want, support me by sponsoring my github account :)
+namespace ${NAMESPACE} {
 
-### Changelog
+TEST(${CLASSNAME}Tests, test_any) {
+  ASSERT_EQ(1, 1);
+}
 
-- See Info about v1.0
+}  // namespace ${NAMESPACE}
 
-**Enjoy!**
+```
 
-                    GNU GENERAL PUBLIC LICENSE
-                       Version 3, 29 June 2007
+## Variables
+
+The variable format is `${KEY}`, the `KEY` supports following:
+
+* **FILENAME** - The file name your input. e.g. `file_generator`
+* **CLASSNAME** - The class name. From the file name in camel style, e.g. `FileGenerator`
+* **USER** - The user. Configured by `git config user.name [USER]`. e.g. `Galen Lin`
+* **ORGANIZATION** - The organization. Configured by `organization` filed in `filegen.json` file. e.g. `Wequick`
+* **YEAR** - The year of now. e.g. `2023`
+* **DATE** - The date of now. Format as 'YYYY-MM-DD', e.g. `2023-07-17`
+* **HEAD_GUARD** - The google-style header guard. From the relative-path-to-project-root in upper case, e.g. `WEQUICK_FILE_GENERATOR_H_`
+* **HEADER_PATH** - The current header path. From the relative-path-to-project-root join with the file name. e.g. `wequick/file_generator.h`
+* **MODULE_INCLUDE** - The modular header includement. If `module` is specified in `filegen.json` then returns  '#include <`module`/`module`.h>\n', e.g. `#include <mymodule/mymodule.h>\n`
+* **NAMESPACE** - The class namespace. Returns the `namespace` field specified in `filegen.json` or fallback to the project root directory name. e.g. `myproject`
