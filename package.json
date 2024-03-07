@@ -1,109 +1,125 @@
 {
-	"name": "filegen",
-	"displayName": "Code File Generator",
-	"description": "Create files in your format. Supported generator: C++ Class & UnitTest file with Google Style. More coming soon.",
-	"publisher": "Wequick",
-	"icon": "icon/logo.png",
-	"repository": {
-		"url": "https://github.com/wequick/vscode-filegen.git"
-	},
-	"version": "1.0.0",
-	"engines": {
-		"vscode": "^1.41.0"
-	},
-	"categories": [
-		"Other"
-	],
-	"keywords": [
-		"generator",
-		"c++",
-		"class",
-		"unittest",
-		"file",
-		"template",
-		"google",
-		"style"
-	],
-	"activationEvents": ["onStartupFinished"],
-	"main": "./out/extension.js",
-	"contributes": {
-		"commands": [
-			{
-				"title": "Create C++ Class & UnitTest",
-				"command": "extension.createClassAndUnitTest"
-			},
-			{
-				"title": "Create C++ Class",
-				"command": "extension.createClass"
-			},
-			{
-				"title": "Create C++ UnitTest",
-				"command": "extension.createUnitTest"
-			}
-		],
-		"menus": {
-			"explorer/context": [
-				{
-					"group": "navigation@-2",
-					"command": "extension.createClassAndUnitTest"
-				},
-				{
-					"group": "navigation@-1",
-					"command": "extension.createClass"
-				},
-				{
-					"group": "navigation@-1",
-					"command": "extension.createUnitTest"
-				}
-			]
-		},
-		"keybindings": [
-			{
-				"command": "extension.createClassAndUnitTest",
-				"key": "alt+x",
-				"when": "editorTextFocus"
-			}
-		],
-		"languages": [
-			{
-				"id": "cpp",
-				"extensions": [
-					".cpp",
-					".hpp"
-				]
-			}
-		],
-		"configuration": [
-			{
-				"title": "File Generator",
-				"properties": {
-					"filegen.templatePath": {
-						"type": [
-							"string"
-						],
-						"default": "filegen",
-						"description": "Specifies the path, where the template files located in."
-					}
-				}
-			}
-		]
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -p ./",
-		"watch": "tsc -watch -p ./",
-		"pretest": "npm run compile",
-		"test": "node ./out/test/runTest.js"
-	},
-	"devDependencies": {
-		"@types/glob": "^7.1.1",
-		"@types/mocha": "^5.2.7",
-		"@types/node": "^12.12.22",
-		"@types/vscode": "^1.41.0",
-		"glob": "^7.1.5",
-		"mocha": "^6.2.2",
-		"tslint": "^5.20.0",
-		"typescript": "^3.6.4",
-		"vscode-test": "^1.2.2"
-	}
+  "name": "filegen",
+  "displayName": "Code File Generator",
+  "description": "Create files in your format. Supported generator: C++ Class & UnitTest file with Google Style. More coming soon.",
+  "publisher": "Wequick",
+  "icon": "icon/logo.png",
+  "repository": {
+    "url": "https://github.com/wequick/vscode-filegen.git"
+  },
+  "version": "1.1.0",
+  "engines": {
+    "vscode": "^1.41.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "generator",
+    "c++",
+    "class",
+    "unittest",
+    "file",
+    "template",
+    "google",
+    "style",
+    "gtest",
+    "gmock"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "title": "Create C++ Class & UnitTest",
+        "command": "extension.createClassAndUnitTest"
+      },
+      {
+        "title": "Create C++ Class",
+        "command": "extension.createClass"
+      },
+      {
+        "title": "Create C++ UnitTest",
+        "command": "extension.createUnitTest"
+      },
+      {
+        "title": "FileGen: Replace to GMock",
+        "command": "extension.replaceGmock"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "group": "navigation@-2",
+          "command": "extension.createClassAndUnitTest"
+        },
+        {
+          "group": "navigation@-1",
+          "command": "extension.createClass"
+        },
+        {
+          "group": "navigation@-1",
+          "command": "extension.createUnitTest"
+        }
+      ],
+      "editor/context": [
+        {
+          "group": "0_extension_group",
+          "when": "editorHasSelection",
+          "command": "extension.replaceGmock"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "extension.createClassAndUnitTest",
+        "key": "alt+x",
+        "when": "editorTextFocus"
+      }
+    ],
+    "languages": [
+      {
+        "id": "cpp",
+        "extensions": [
+          ".cpp",
+          ".hpp"
+        ]
+      }
+    ],
+    "configuration": [
+      {
+        "title": "File Generator",
+        "properties": {
+          "filegen.templatePath": {
+            "type": [
+              "string"
+            ],
+            "default": "filegen",
+            "description": "Specifies the path, where the template files located in."
+          }
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTest.js",
+    "release": "node scripts/release.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.1",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^12.12.22",
+    "@types/vscode": "^1.41.0",
+    "glob": "^7.1.5",
+    "mocha": "^6.2.2",
+    "tslint": "^5.20.0",
+    "typescript": "^3.6.4",
+    "vscode-test": "^1.2.2"
+  }
 }
