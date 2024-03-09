@@ -109,7 +109,8 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile",
     "test": "node ./out/test/runTest.js",
-    "release": "node scripts/release.js"
+    "release": "node scripts/release.js",
+    "package": "node scripts/package.js"
   },
   "devDependencies": {
     "@types/glob": "^7.1.1",
