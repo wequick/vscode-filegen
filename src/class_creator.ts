@@ -27,11 +27,13 @@ export class class_creator
     header_template_name: string;
     source_template_name: string;
     unittest_template_name: string;
+    variables?: { [key: string]: string };
 
     constructor(type: number, workspace: string, class_name: string,
         template: template_helper,
         header_preset: string, source_file_preset: string, unittest_file_preset: string,
-        create_location: string, source_file_name: string, header_file_name: string, unittest_file_name: string) 
+        create_location: string, source_file_name: string, header_file_name: string, unittest_file_name: string,
+        variables?: { [key: string]: string })
     {
         this.gens_class = (type & 1) != 0;
         this.gens_unittest = (type & 2) != 0;
@@ -49,15 +51,36 @@ export class class_creator
         this.header_template_name = header_file_name;
         this.source_template_name = source_file_name;
         this.unittest_template_name = unittest_file_name;
+        this.variables = variables;
     }
 
-    exec(cmd: string) : Promise<string|undefined> {
+    static exec(cmd: string) : Promise<string|undefined> {
         return new Promise((resolve, reject) => {
             cp.exec(cmd, (err: any, stdout: string, stderr: string) => {
                 resolve(err ? undefined : stdout.replace('\n', ''));
             })
         });
     }
+
+    exec(cmd: string) : Promise<string|undefined> {
+        return class_creator.exec(cmd);
+    }
+
+    static async loadConfig(root: string) {
+        const config_name = 'filegen.json'
+        let config_file = path.join(root, config_name);
+        if (!fs.existsSync(config_file)) {
+            const git_dir = await this.exec(`git -C "${root}" rev-parse --show-toplevel`);
+            if (git_dir) {
+                config_file = path.join(git_dir, config_name);
+            }
+        }
+        if (!fs.existsSync(config_file)) {
+            return undefined;
+        }
+        return JSON.parse(fs.readFileSync(config_file).toString());
+    }
+
 
     async parse()
     {
@@ -110,9 +133,18 @@ export class class_creator
             }
         }
 
+        const user_cmds: Array<command_replace_model> = [];
+        if (this.variables) {
+            Object.keys(this.variables).forEach(key => {
+                const regex = new RegExp(`\\$\{${key}\}`, 'gi');
+                user_cmds.push({ reg_expression: regex, replace_string: this.variables![key] });
+            });
+        }
+
         const file_cmds: Array<command_replace_model> = [
             { reg_expression: default_regex, replace_string: regex_commands.default(this.file_name)},
         ]
+        file_cmds.push(...user_cmds);
 
         this.source_file = this.execute_replacement(file_cmds, this.source_file);
         this.header_file = this.execute_replacement(file_cmds, this.header_file);
@@ -129,6 +161,7 @@ export class class_creator
             { reg_expression: module_regex, replace_string: regex_commands.module_include(module)},
             { reg_expression: namespace_regex, replace_string: regex_commands.namespace(root_dir, namespace)},
         ]
+        content_cmds.push(...user_cmds);
 
         const template_path = path.join(root_dir, 'filegen');
         if (this.gens_class) {

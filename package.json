@@ -45,8 +45,12 @@
         "command": "extension.createUnitTest"
       },
       {
-        "title": "FileGen: Replace to GMock",
+        "title": "FileGen: Replace to gmock class",
         "command": "extension.replaceGmock"
+      },
+      {
+        "title": "FileGen: Extract gmock operator==",
+        "command": "extension.extractGmockEq"
       }
     ],
     "menus": {
@@ -69,6 +73,10 @@
           "group": "0_extension_group",
           "when": "editorHasSelection",
           "command": "extension.replaceGmock"
+        },
+        {
+          "group": "0_extension_group",
+          "command": "extension.extractGmockEq"
         }
       ]
     },

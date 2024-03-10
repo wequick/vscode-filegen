@@ -57,15 +57,36 @@ TEST(${CLASSNAME}Tests, test_any) {\n\
   ASSERT_EQ(1, 1);\n\
 }\n\
 \n\
-}  // namespace ${NAMESPACE}\n"]]);
-    if (!fs.existsSync(this._dir)) {
-      fs.mkdirSync(this._dir);
-    }
+}  // namespace ${NAMESPACE}\n"]
+        , ["${FILEPREFIX}${FILENAME}${FILESUFFIX}.h", `//
+// Created by \${USER} on \${DATE}.
+// Copyright (c) \${YEAR} \${ORGANIZATION}. All rights reserved.
+//
+
+#ifndef \${HEADER_GUARD}
+#define \${HEADER_GUARD}
+
+\${H_BODY}
+
+#endif  // \${HEADER_GUARD}
+`], ["${FILEPREFIX}${FILENAME}${FILESUFFIX}.cc", `//
+// Created by \${USER} on \${DATE}.
+// Copyright (c) \${YEAR} \${ORGANIZATION}. All rights reserved.
+//
+
+#include "\${HEADER_PATH}"
+
+\${CC_BODY}
+`]]);
+    // if (!fs.existsSync(this._dir)) {
+    //   fs.mkdirSync(this._dir);
+    // }
     for (let [key, content] of default_templates) {
-      const file = path.join(this._dir, key);
-      if (!fs.existsSync(file)) {
-        fs.writeFileSync(file, content);
-      }
+      // const file = path.join(this._dir, key);
+      // if (!fs.existsSync(file)) {
+      //   fs.writeFileSync(file, content);
+      // }
+      this._templates.set(key, content);
     }
   }
 
@@ -75,13 +96,13 @@ TEST(${CLASSNAME}Tests, test_any) {\n\
       return this._templates.get(name) || ret;
     }
     // Read from file
-    if (this._dir) {
-      const file = path.join(this._dir, name);
-      if (fs.existsSync(file)) {
-        ret = fs.readFileSync(file, {'encoding': 'utf-8'});
-      }
-    }
-    this._templates.set(name, ret);
+    // if (this._dir) {
+    //   const file = path.join(this._dir, name);
+    //   if (fs.existsSync(file)) {
+    //     ret = fs.readFileSync(file, {'encoding': 'utf-8'});
+    //   }
+    // }
+    // this._templates.set(name, ret);
     return ret;
   }
 
