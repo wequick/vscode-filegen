@@ -51,6 +51,10 @@
       {
         "title": "FileGen: Extract gmock operator==",
         "command": "extension.extractGmockEq"
+      },
+      {
+        "title": "FileGen: Extract gmock class",
+        "command": "extension.extractGmockClass"
       }
     ],
     "menus": {
@@ -73,6 +77,10 @@
           "group": "0_extension_group",
           "when": "editorHasSelection",
           "command": "extension.replaceGmock"
+        },
+        {
+          "group": "0_extension_group",
+          "command": "extension.extractGmockClass"
         },
         {
           "group": "0_extension_group",

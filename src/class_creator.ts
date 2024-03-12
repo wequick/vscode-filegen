@@ -243,7 +243,7 @@ export class class_creator
             }
         }
         else
-            fs.mkdirSync(this.create_location); // if the path doesnt exist, just create the directory
+            fs.mkdirSync(this.create_location, {recursive: true}); // if the path doesnt exist, just create the directory
     
         let ret = true;
         if (this.gens_class) {
