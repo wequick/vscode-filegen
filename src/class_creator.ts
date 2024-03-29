@@ -78,7 +78,11 @@ export class class_creator
         if (!fs.existsSync(config_file)) {
             return undefined;
         }
-        return JSON.parse(fs.readFileSync(config_file).toString());
+        try {
+            return JSON.parse(fs.readFileSync(config_file).toString());
+        } catch (error) {
+            return undefined;
+        }
     }
 
 
