@@ -23,12 +23,8 @@ async function makeClassGenerator(type: number,
   var header_file_name     = `${fileName}.h`;
   var source_file_name     = `${fileName}.cc`;
   var unittest_file_name   = "${FILENAME}_unittest.cc"
-  var header_preset        = await template.get_template(header_file_name);
-  var source_file_preset   = await template.get_template(source_file_name);
-  var unittest_file_preset = await template.get_template(unittest_file_name);
   const root = vscode_helper.workspace() || "";
   var creator = new class_creator(type, root, className, template,
-      header_preset, source_file_preset, unittest_file_preset,
       location, source_file_name, header_file_name, unittest_file_name,
       variables);
   await creator.parse()
@@ -49,16 +45,14 @@ async function handleCommand(type: number, args: any) {
   const location = dir_h.dir();
 
   const creator = await makeClassGenerator(type, className, location);
-        
-  var out = creator.create_files(); // if setPath was neither false, null or true, it was a ststring, so maybe a valid path? 
-                              //Create the class there
-  if (out)
-  {
-    vscode.window.showInformationMessage('Your Class ' + res + '  has been created! \n(@'+location+')');
-  }
-  else
-  {
-    vscode.window.showErrorMessage('Your Class ' + res + '  has been not created! \n(@'+location+')');
+ 
+  const out = creator.create_files();
+  if (out) {
+    vscode.window.showInformationMessage(`FileGen: ${out.join('|')} created.`);
+    vscode.workspace.openTextDocument(path.join(location, out[0]))
+      .then(doc => vscode.window.showTextDocument(doc));
+  } else {
+    vscode.window.showErrorMessage(`FileGen: failed to create files for "${className}".`);
   }
 }
 
@@ -97,7 +91,7 @@ async function handleExtractGmockEq(root: string, args: any) {
   const fullText = doc.getText();
   const result = gmock.extractEqClass(fullText, startTag, lineNumber);
   if (!result.data) {
-    vscode.window.showErrorMessage(result.error!);
+    vscode.window.showErrorMessage(`FileGen: ${result.error}.`);
     return;
   }
   const {fileName, hBody, cBody} = result.data;
@@ -111,13 +105,13 @@ async function handleExtractGmockEq(root: string, args: any) {
     H_BODY: hBody,
     CC_BODY: cBody,
   });
-  const hFile = `${filePrefix}${fileName}.h`;
-  if (creator.create_files()) {
-    vscode.window.showInformationMessage(`${hFile}|cc created.`);
-    vscode.workspace.openTextDocument(path.join(toDir, hFile))
+  const out = creator.create_files();
+  if (out) {
+    vscode.window.showInformationMessage(`FileGen: ${out.join(', ')} created.`);
+    vscode.workspace.openTextDocument(path.join(toDir, out[0]))
       .then(doc => vscode.window.showTextDocument(doc));
   } else {
-    vscode.window.showErrorMessage(`Failed to extract ${hFile}|cc`);
+    vscode.window.showErrorMessage(`FileGen: failed to extract operator== class.`);
   }
 }
 
@@ -139,7 +133,7 @@ async function handleExtractGmockClass(root: string, args: any) {
   const fullText = doc.getText();
   const result = gmock.extractMockClass(fullText, startTag, lineNumber);
   if (!result.data) {
-    vscode.window.showErrorMessage(result.error!);
+    vscode.window.showErrorMessage(`FileGen: ${result.error}.`);
     return;
   }
   const {fileName, hBody, cBody} = result.data;
@@ -152,13 +146,13 @@ async function handleExtractGmockClass(root: string, args: any) {
     H_BODY: hBody,
     CC_BODY: cBody,
   });
-  const hFile = `${filePrefix}${fileName}.h`;
-  if (creator.create_files()) {
-    vscode.window.showInformationMessage(`${hFile}|cc created`);
-    vscode.workspace.openTextDocument(path.join(toDir, hFile))
+  const out = creator.create_files();
+  if (out) {
+    vscode.window.showInformationMessage(`FileGen: ${out.join(', ')} created.`);
+    vscode.workspace.openTextDocument(path.join(toDir, out[0]))
       .then(doc => vscode.window.showTextDocument(doc));
   } else {
-    vscode.window.showErrorMessage(`Failed to extract ${hFile}|cc`);
+    vscode.window.showErrorMessage(`FileGen: failed to extract gmock class.`);
   }
 }
 
@@ -168,9 +162,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
-  template.init_templates(context.globalStoragePath);
-
   const root = vscode_helper.workspace() || "";
+  template.init_templates(path.join(root, 'filegen'));
   kConfig = await class_creator.loadConfig(root) || {}
   const configWatcher = vscode.workspace.createFileSystemWatcher({
     base: root,
@@ -183,6 +176,12 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   });
   configWatcher.onDidDelete(_e => kConfig = {});
+  const templateWatcher = vscode.workspace.createFileSystemWatcher({
+    base: root,
+    pattern: 'filegen/*'
+  }, true, false, false);
+  templateWatcher.onDidChange(uri => template.removeCache(path.basename(uri.fsPath)));
+  templateWatcher.onDidDelete(uri => template.removeCache(path.basename(uri.fsPath)));
 
   context.subscriptions.push(vscode.commands.registerCommand('extension.createClassAndUnitTest', async (args) => {
     // The code you place here will be executed every time your command is executed

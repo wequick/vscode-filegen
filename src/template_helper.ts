@@ -3,15 +3,16 @@ import * as path from 'path';
 
 export class template_helper {
   _dir: string | undefined;
+  _default_templates: Map<string, string>;
   _templates: Map<string, string>;
   constructor() {
     this._templates = new Map<string, string>();
+    this._default_templates = new Map<string, string>();
   }
 
   async init_templates(dir: string) {
     this._dir = dir;
-    const default_templates = new Map<string, string>([
-      ["${FILENAME}.h", "//\n\
+    this._default_templates.set('${FILENAME}.h', "//\n\
 // Created by ${USER} on ${DATE}.\n\
 // Copyright (c) ${YEAR} ${ORGANIZATION}. All rights reserved.\n\
 //\n\
@@ -31,8 +32,8 @@ class ${CLASSNAME} {\n\
 \n\
 \n}  // namespace ${NAMESPACE}\
 \n\
-\n#endif  // ${HEADER_GUARD}\n"]
-        , ["${FILENAME}.cc", "//\n\
+\n#endif  // ${HEADER_GUARD}\n");
+    this._default_templates.set("${FILENAME}.cc", "//\n\
 // Created by ${USER} on ${DATE}.\n\
 // Copyright (c) ${YEAR} ${ORGANIZATION}. All rights reserved.\n\
 //\n\
@@ -42,8 +43,8 @@ class ${CLASSNAME} {\n\
 namespace ${NAMESPACE} {\n\
 \n\
 \n\
-\n}  // namespace ${NAMESPACE}\n"]
-        , ["${FILENAME}_unittest.cc", "//\n\
+\n}  // namespace ${NAMESPACE}\n");
+    this._default_templates.set("${FILENAME}_unittest.cc", "//\n\
 // Created by ${USER} on ${DATE}.\n\
 // Copyright (c) ${YEAR} ${ORGANIZATION}. All rights reserved.\n\
 //\n\
@@ -57,8 +58,8 @@ TEST(${CLASSNAME}Tests, test_any) {\n\
   ASSERT_EQ(1, 1);\n\
 }\n\
 \n\
-}  // namespace ${NAMESPACE}\n"]
-        , ["${FILEPREFIX}${FILENAME}${FILESUFFIX}.h", `//
+}  // namespace ${NAMESPACE}\n");
+    this._default_templates.set("${FILEPREFIX}${FILENAME}${FILESUFFIX}.h", `//
 // Created by \${USER} on \${DATE}.
 // Copyright (c) \${YEAR} \${ORGANIZATION}. All rights reserved.
 //
@@ -69,7 +70,8 @@ TEST(${CLASSNAME}Tests, test_any) {\n\
 \${H_BODY}
 
 #endif  // \${HEADER_GUARD}
-`], ["${FILEPREFIX}${FILENAME}${FILESUFFIX}.cc", `//
+`);
+    this._default_templates.set("${FILEPREFIX}${FILENAME}${FILESUFFIX}.cc", `//
 // Created by \${USER} on \${DATE}.
 // Copyright (c) \${YEAR} \${ORGANIZATION}. All rights reserved.
 //
@@ -77,41 +79,30 @@ TEST(${CLASSNAME}Tests, test_any) {\n\
 #include "\${HEADER_PATH}"
 
 \${CC_BODY}
-`]]);
-    // if (!fs.existsSync(this._dir)) {
-    //   fs.mkdirSync(this._dir);
-    // }
-    for (let [key, content] of default_templates) {
-      // const file = path.join(this._dir, key);
-      // if (!fs.existsSync(file)) {
-      //   fs.writeFileSync(file, content);
-      // }
-      this._templates.set(key, content);
-    }
+`);
+  }
+
+  removeCache(name: string) {
+    this._templates.delete(name);
   }
 
   async get_template(name: string): Promise<string> {
-    let ret = "filegen: No template!";
-    if (this._templates.has(name)) {
-      return this._templates.get(name) || ret;
+    // 先读缓存
+    let ret = this._templates.get(name);
+    if (ret) {
+      return ret;
     }
-    // Read from file
-    // if (this._dir) {
-    //   const file = path.join(this._dir, name);
-    //   if (fs.existsSync(file)) {
-    //     ret = fs.readFileSync(file, {'encoding': 'utf-8'});
-    //   }
-    // }
-    // this._templates.set(name, ret);
+    // 再读文件
+    if (this._dir) {
+      const file = path.join(this._dir, name);
+      if (fs.existsSync(file)) {
+        ret = fs.readFileSync(file, {'encoding': 'utf-8'});
+        this._templates.set(name, ret);
+        return ret;
+      }
+    }
+    // 兜底默认值
+    ret = this._default_templates.get(name) || `filegen: No template for "${name}"!`
     return ret;
-  }
-
-  async get_workspace_template(dir: string, name: string): Promise<string|undefined> {
-    // Read from file
-    const file = path.join(dir, 'filegen', name);
-    if (!fs.existsSync(file)) {
-      return undefined;
-    }
-    return fs.readFileSync(file, {'encoding': 'utf-8'});
   }
 }

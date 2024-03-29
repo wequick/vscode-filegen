@@ -31,7 +31,6 @@ export class class_creator
 
     constructor(type: number, workspace: string, class_name: string,
         template: template_helper,
-        header_preset: string, source_file_preset: string, unittest_file_preset: string,
         create_location: string, source_file_name: string, header_file_name: string, unittest_file_name: string,
         variables?: { [key: string]: string })
     {
@@ -41,9 +40,6 @@ export class class_creator
         this.file_name = class_name;
         this.class_name = class_name;
         this.template = template;
-        this.header_file_content = header_preset;
-        this.source_file_content = source_file_preset;
-        this.unittest_file_content = unittest_file_preset;
         this.create_location = create_location;
         this.header_file = header_file_name;
         this.source_file = source_file_name;
@@ -167,25 +163,15 @@ export class class_creator
         ]
         content_cmds.push(...user_cmds);
 
-        const template_path = path.join(root_dir, 'filegen');
         if (this.gens_class) {
-            let content = await this.template.get_workspace_template(root_dir, this.header_template_name);
-            if (content) {
-                this.header_file_content = content;
-            }
-            this.header_file_content = this.execute_replacement(content_cmds, this.header_file_content);
-            content = await this.template.get_workspace_template(root_dir, this.source_template_name);
-            if (content) {
-                this.source_file_content = content;
-            }
-            this.source_file_content = this.execute_replacement(content_cmds, this.source_file_content);
+            this.header_file_content = this.execute_replacement(content_cmds,
+                await this.template.get_template(this.header_template_name));
+            this.source_file_content = this.execute_replacement(content_cmds,
+                await this.template.get_template(this.source_template_name));
         }
         if (this.gens_unittest) {
-            const content = await this.template.get_workspace_template(root_dir, this.unittest_template_name);
-            if (content) {
-                this.unittest_file_content = content;
-            }
-            this.unittest_file_content = this.execute_replacement(content_cmds, this.unittest_file_content);
+            this.unittest_file_content = this.execute_replacement(content_cmds,
+                await this.template.get_template(this.unittest_template_name));
         }
     }
 
@@ -243,20 +229,24 @@ export class class_creator
             var stats = fs.lstatSync(this.create_location);
     
             if (!stats.isDirectory()) {
-                return false; // if the give directory path, isnt a directory, you cant create a class
+                return undefined; // if the give directory path, isnt a directory, you cant create a class
             }
         }
         else
             fs.mkdirSync(this.create_location, {recursive: true}); // if the path doesnt exist, just create the directory
     
         let ret = true;
+        let files = [];
         if (this.gens_class) {
             ret = ret && this.create_header_file();
             ret = ret && this.create_source_file();
+            files.push(this.header_file);
+            files.push(this.source_file);
         }
         if (this.gens_unittest) {
             ret = ret && this.create_unittest_file();
+            files.push(this.unittest_file);
         }
-        return ret;
+        return ret ? files: undefined;
     }
 }
