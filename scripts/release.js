@@ -76,17 +76,19 @@ class Changelog {
   }
   addLineIfNeeded(line) {
     let msg = line.trim();
-    // 找 tag，作为新段落
+    // Find tags as new section
     let re = msg.match(/^\(.*tag: ([^\s,\)]+)[^\)]*\)(.+)$/);
     if (re) {
       this.addSection(re[1]);
       msg = re[2];
     }
-    // 找 msg，只记录 feat|fix|refactor
-    re = msg.match(/^(feat|fix|refactor):(.*)$/);
+    // Find messages with feat|fix|refactor prefix.
+    // e.g. "(HEAD -> master)feat(module): do sth, to #id."
+    re = msg.match(/^(\([^\)]+\))?(feat|fix|refactor)(\([^\)]+\))?:\s*(.*)$/);
     if (re) {
-      msg = this.addIssueLink(re[2].trim());
-      this.addItem(re[1], msg);
+      const [_, _branch, type, _module, rawMsg] = re;
+      msg = this.addIssueLink(rawMsg);
+      this.addItem(type, msg);
     }
   }
   gitLogCmd() {
@@ -149,46 +151,46 @@ function hookOnVersionChange(_versionStr) {
 }
 
 function main(argv) {
-  // 获取下个版本号
+  // get next version
   let nextVersion = argv[0];
   const config = loadConfig();
   const version = new Version(config.version);
   if (!version.isValid()) {
     abort('Invalid version: ' + config.version);
   }
-  printOk(`当前版本号: ${config.version}`);
+  printOk(`current verion: ${config.version}`);
   if (!nextVersion) {
     nextVersion = `${version.major}.${version.minor + 1}.${version.patch}`;
   } else if (nextVersion === 'patch') {
     nextVersion = `${version.major}.${version.minor}.${version.patch + 1}`;
   }
-  printOk(`下个版本号: ${nextVersion}`);
-  // 修改 package.json
+  printOk(`next version: ${nextVersion}`);
+  // Modify package.json version
   writeConfigVersion(config, nextVersion);
-  printOk('修改 package.json version');
-  // 同步修改 version.cfg
-  if (hookOnVersionChange(nextVersion)) {
-    printOk('同步修改 version.cfg');
-  }
-  // 生成 changelog
+  printOk('Update package.json version');
+  hookOnVersionChange(nextVersion);
+  // Generate changelog
   let projectUrl = execSync(`git remote get-url origin`, {encoding: 'utf-8'}).trim();
   if (projectUrl.startsWith('git')) {
-    projectUrl = projectUrl.replace('git@gitlab.alibaba-inc.com:', 'https://code.alibaba-inc.com/');
-  } else {
-    projectUrl = projectUrl.replace('http://gitlab.alibaba-inc.com', 'https://code.alibaba-inc.com');
+    const matches = projectUrl.match(/^git@([^:]+):(.+)\.git$/);
+    if (matches) {
+      projectUrl = `https://${matches[1]}/${matches[2]}/`;
+    }
   }
-  projectUrl = projectUrl.replace('.git', '') + '/';
-  const issurUrl = 'https://aone.alibaba-inc.com/issue/';
+  // compat url for company
+  projectUrl = projectUrl.replace('gitlab.alibaba-inc.com', 'code.alibaba-inc.com');
+  const issueUrlBase = projectUrl.indexOf('alibaba-inc') >= 0? 'https://aone.alibaba-inc.com/' : projectUrl;
+  const issurUrl = `${issueUrlBase}issue/`;
   const changelog = new Changelog(projectUrl, issurUrl, nextVersion);
   const logs = execSync(changelog.gitLogCmd(), {encoding: 'utf-8'}).trim();
   logs.split('\n').forEach(line => {
     changelog.addLineIfNeeded(line);
   });
   const markdown = changelog.toMarkdown();
-  printOk('生成 changelog');
-  // 写入 CHANGELOG.md
+  printOk('Generate changelog');
+  // Update CHANGELOG.md
   fs.writeFileSync('CHANGELOG.md', markdown, 'utf-8');
-  printOk('写入 CHANGELOG.md');
+  printOk('Update CHANGELOG.md');
 }
 
 main(process.argv.slice(2));
