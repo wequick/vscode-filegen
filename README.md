@@ -65,7 +65,7 @@ Create in your project root.
 
 ## Templates
 
-Template file can be defined in `filegen/*` in project root.
+Template file can be defined in `filegen/*` in your project root.
 
 Example:
 ```
@@ -152,6 +152,8 @@ TEST(${CLASSNAME}Tests, test_any) {
 
 ### ${FILEPREFIX}${FILENAME}${FILESUFFIX}.h
 
+Use for extract gmock class.
+
 ```cpp
 // Created by ${USER} on ${DATE}.
 // Copyright (c) ${YEAR} ${ORGANIZATION}. All rights reserved.
@@ -167,6 +169,8 @@ ${H_BODY}
 ```
 
 ### ${FILEPREFIX}${FILENAME}${FILESUFFIX}.cc
+
+Use for extract gmock class.
 
 ```cpp
 // Created by ${USER} on ${DATE}.

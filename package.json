@@ -1,13 +1,13 @@
 {
   "name": "filegen",
   "displayName": "Code File Generator",
-  "description": "Create files in your format. Supported generator: C++ Class & UnitTest file with Google Style. More coming soon.",
+  "description": "Create files in template. Generate C++ Class & UnitTest file with Google Style. Convert code to gmock.",
   "publisher": "Wequick",
   "icon": "icon/logo.png",
   "repository": {
     "url": "https://github.com/wequick/vscode-filegen.git"
   },
-  "version": "1.1.0",
+  "version": "1.1.1",
   "engines": {
     "vscode": "^1.41.0"
   },

@@ -1,0 +1,11 @@
+{
+  "module": "mymodule",
+  "namespace": "wq",
+  "organization": "Wequick",
+  "gmock": {
+    "mockFilePath": "example/test/mock",
+    "mockFilePrefix": "mock_",
+    "eqFilePath": "example/test/compare",
+    "eqFilePrefix": "eq_"
+  }
+}

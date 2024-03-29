@@ -360,7 +360,7 @@ export class GmockHelper {
     return fields;
   }
 
-  private getClassHeaders(headers: string[], classCode: string, filePath: string, headerGuard?: string) {
+  private getClassHeaders(headers: string[], classCode: string, headerFileName: string, headerGuard?: string) {
     if (classCode.indexOf('list<') >= 0) {
       headers.push('<list>');
     }
@@ -383,7 +383,7 @@ export class GmockHelper {
       headers.push('<vector>');
     }
     if (headerGuard) {
-      const headerInclude = this.toHeaderInclude(headerGuard);
+      const headerInclude = this.toHeaderInclude(headerGuard, headerFileName);
       headers.push(`"${headerInclude}"`);
     }
   }
@@ -414,8 +414,21 @@ export class GmockHelper {
     return code.substring(i1 + tag.length, i2).trim();
   }
 
-  private toHeaderInclude(headerGuard: string): string {
-    return headerGuard.replace('_H_', '.h').replace(/_/g, '/').toLowerCase();
+  private toHeaderInclude(headerGuard: string, headerFileName: string): string {
+    let dir = headerGuard.toLowerCase().replace('_h_', '.h');
+    const i = dir.indexOf(headerFileName);
+    if (i >= 0) {
+      // fileName: my_struct.h
+      // headerGuard: PATH_TO_MY_STRUCT_H_
+      // headerInclude: path/to/my_struct.h
+      dir = dir.substring(0, i);
+    } else {
+      // fileName: my_struct.h
+      // headerGuard: PATH_TO_STRUCT_H_ (maybe mismatched)
+      // headerInclude: path/to/my_struct.h
+      dir = dir.replace(/[^_]+\.h/, '');
+    }
+    return dir.replace(/_/g, '/') + headerFileName;
   }
 
   private parseCode(code: string, startTag: string, startLine: number) {
@@ -473,7 +486,7 @@ export class GmockHelper {
     return resultCode;
   }
 
-  extractEqClass(fullText: string, startTag: string, lineNumber: number): ExtractResult {
+  extractEqClass(fullText: string, startTag: string, lineNumber: number, headerFileName: string): ExtractResult {
     const code = this.parseCode(fullText, startTag, lineNumber);
     if (!code.code || !code.className) {
       return { error: `Failed to parseCode with startTag "${startTag}"` };
@@ -530,7 +543,7 @@ export class GmockHelper {
       cBody = this.wrapNamespace(cBody, code.namespace);
     }
     if (code.headerGuard) {
-      const headerInclude = this.toHeaderInclude(code.headerGuard);
+      const headerInclude = this.toHeaderInclude(code.headerGuard, headerFileName);
       hBody = `#include "${headerInclude}"\n\n${hBody}`;
     }
     hBody = `#include <sstream>\n\n${hBody}`;
@@ -538,7 +551,7 @@ export class GmockHelper {
     return { data: { fileName, hBody, cBody } };
   }
 
-  extractMockClass(fullText: string, startTag: string, lineNumber: number): ExtractResult {
+  extractMockClass(fullText: string, startTag: string, lineNumber: number, headerFileName: string): ExtractResult {
     const code = this.parseCode(fullText, startTag, lineNumber);
     if (!code.code) {
       return {error: `Failed to parseCode with startTag "${startTag}"`};
@@ -553,7 +566,7 @@ export class GmockHelper {
     }
     const fileName = mock.origClassName.replace(/([^\s])([A-Z])/g, "$1_$2").toLowerCase();
     const hHeaders: string[] = ['<gmock/gmock.h>', '<cstring>'];
-    this.getClassHeaders(hHeaders, mock.code, fileName, code.headerGuard);
+    this.getClassHeaders(hHeaders, mock.code, headerFileName, code.headerGuard);
     const hBody = this.mergeCode(hHeaders, mock.code, code.namespace);
 
     const constructorImpls = mock.constructors.join('\n');

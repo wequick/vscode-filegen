@@ -89,7 +89,8 @@ async function handleExtractGmockEq(root: string, args: any) {
     return;
   }
   const fullText = doc.getText();
-  const result = gmock.extractEqClass(fullText, startTag, lineNumber);
+  const curFileName = path.basename(doc.uri.fsPath);
+  const result = gmock.extractEqClass(fullText, startTag, lineNumber, curFileName);
   if (!result.data) {
     vscode.window.showErrorMessage(`FileGen: ${result.error}.`);
     return;
@@ -131,7 +132,8 @@ async function handleExtractGmockClass(root: string, args: any) {
   }
   // let f = doc.fileName;
   const fullText = doc.getText();
-  const result = gmock.extractMockClass(fullText, startTag, lineNumber);
+  const curFileName = path.basename(doc.uri.fsPath);
+  const result = gmock.extractMockClass(fullText, startTag, lineNumber, curFileName);
   if (!result.data) {
     vscode.window.showErrorMessage(`FileGen: ${result.error}.`);
     return;
