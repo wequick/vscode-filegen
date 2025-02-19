@@ -138,8 +138,8 @@ export class GmockHelper {
         modifier = fun.modifier.indexOf('const') >= 0 ? '_CONST' : '';
         return `${fun.beforeVirtual}MOCK${modifier}_METHOD${fun.argsCount}(${fun.functionName}, ${fun.returnType}${fun.args});${fun.arfterArgs}`;
       case GmockStyle.New:
-        modifier = fun.modifier.indexOf('const') >= 0 ? 'const' : '';
-        return `${fun.beforeVirtual}MOCK_METHOD(${fun.returnType}, ${fun.functionName}, ${fun.args}, (${modifier})); ${fun.arfterArgs}`;   
+        modifier = fun.modifier.indexOf('const') >= 0 ? ', (const)' : '';
+        return `${fun.beforeVirtual}MOCK_METHOD(${fun.returnType}, ${fun.functionName}, ${fun.args}${modifier}); ${fun.arfterArgs}`;   
     }
   }
 
