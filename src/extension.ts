@@ -7,10 +7,23 @@ import { vscode_helper } from "./vscode_helper";
 import { dir_helper } from "./dir_helper";
 import { template_helper } from './template_helper';
 import { GmockHelper } from './gmock_helper';
+import { gmockStyleFromStr } from './conversions';
 
 const template = new template_helper();
-const gmock = new GmockHelper();
 let kConfig: any = {};
+
+function makeGmock(): GmockHelper {
+  var config = vscode.workspace.getConfiguration('filegen');
+
+  var gmockStyleStr = config.get('gmockStyle');
+  if(gmockStyleStr === undefined) {
+    throw Error('Coudln\'t find config filegen.gmockStyle');
+  }
+
+  var gmockStyle = gmockStyleFromStr(gmockStyleStr as string);
+
+  return new GmockHelper(gmockStyle);
+}
 
 async function makeClassGenerator(type: number,
     className: string,
@@ -65,6 +78,7 @@ async function handleReplaceGmock(args: any) {
     const selection = editor.selection;
     const word = doc.getText(selection);
     if (word.indexOf("virtual ") >= 0 || word.indexOf("class ") >= 0) {
+      const gmock = makeGmock();
       editor.edit(eb => {
         // 文本替换
         const mock = gmock.toGmock(word);
@@ -90,6 +104,7 @@ async function handleExtractGmockEq(root: string, args: any) {
   }
   const fullText = doc.getText();
   const curFileName = path.basename(doc.uri.fsPath);
+  const gmock = makeGmock();
   const result = gmock.extractEqClass(fullText, startTag, lineNumber, curFileName);
   if (!result.data) {
     vscode.window.showErrorMessage(`FileGen: ${result.error}.`);
@@ -133,6 +148,7 @@ async function handleExtractGmockClass(root: string, args: any) {
   // let f = doc.fileName;
   const fullText = doc.getText();
   const curFileName = path.basename(doc.uri.fsPath);
+  const gmock = makeGmock();
   const result = gmock.extractMockClass(fullText, startTag, lineNumber, curFileName);
   if (!result.data) {
     vscode.window.showErrorMessage(`FileGen: ${result.error}.`);

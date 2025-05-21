@@ -109,11 +109,22 @@
         "title": "File Generator",
         "properties": {
           "filegen.templatePath": {
-            "type": [
-              "string"
-            ],
+            "type": "string",
             "default": "filegen",
             "description": "Specifies the path, where the template files located in."
+          },
+          "filegen.gmockStyle": {
+            "type": "string",
+            "enum": [
+              "old",
+              "new"
+            ],
+            "enumDescriptions": [
+              "Use the old-style MOCK_METHODn, MOCK_CONST_METHODn, ... macros.",
+              "Use the new MOCK_METHOD macro."
+            ],
+            "default": "old",
+            "description": "Gmock style to use when generating mock classes from interfaces."
           }
         }
       }

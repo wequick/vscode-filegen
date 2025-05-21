@@ -51,7 +51,17 @@ interface ExtractResult {
   data?: ExtractData;
 }
 
+export enum GmockStyle {
+  Old,
+  New,
+}
+
 export class GmockHelper {
+  readonly style: GmockStyle;
+
+  constructor(style: GmockStyle = GmockStyle.Old) {
+    this.style = style;
+  }
 
   private getArgsCount(args: string): number {
     // (StreamerLogType type,
@@ -119,8 +129,18 @@ export class GmockHelper {
     if (!fun) {
       return text;
     }
-    const modifier = fun.modifier.indexOf('const') >= 0 ? '_CONST' : '';
-    return `${fun.beforeVirtual}MOCK${modifier}_METHOD${fun.argsCount}(${fun.functionName}, ${fun.returnType}${fun.args});${fun.arfterArgs}`;
+
+    var modifier = '';
+
+    switch(this.style)
+    {
+      case GmockStyle.Old:
+        modifier = fun.modifier.indexOf('const') >= 0 ? '_CONST' : '';
+        return `${fun.beforeVirtual}MOCK${modifier}_METHOD${fun.argsCount}(${fun.functionName}, ${fun.returnType}${fun.args});${fun.arfterArgs}`;
+      case GmockStyle.New:
+        modifier = fun.modifier.indexOf('const') >= 0 ? ', (const)' : '';
+        return `${fun.beforeVirtual}MOCK_METHOD(${fun.returnType}, ${fun.functionName}, ${fun.args}${modifier}); ${fun.arfterArgs}`;   
+    }
   }
 
   private parseClassDeclare(text: string): { [key: string]: string } {
