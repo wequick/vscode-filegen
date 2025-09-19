@@ -9,45 +9,65 @@ type command_replace_model = {
     replace_string: string
 }
 
+interface FileConfig {
+    template_name: string
+    file_name?: string
+    file_content?: string
+}
+
 export class class_creator
 {
-    header_file_content: string = "";
-    source_file_content: string = "";
-    unittest_file_content: string = "";
+    lang: string = "cpp";
+    // header_file_content: string = "";
+    // source_file_content: string = "";
+    // unittest_file_content: string = "";
     file_name: string = "";
     class_name: string = "";
     create_location: string = "";
-    header_file: string = "";
-    source_file: string = "";
-    unittest_file: string = "";
+    // header_file: string = "";
+    // source_file: string = "";
+    // unittest_file: string = "";
     workspace: string = "";
     gens_class: boolean = true;
     gens_unittest: boolean = false;
     template: template_helper;
-    header_template_name: string;
-    source_template_name: string;
-    unittest_template_name: string;
+    // header_template_name: string;
+    // source_template_name: string;
+    // unittest_template_name: string;
     variables?: { [key: string]: string };
+    configs: FileConfig[] = [];
+    suffixes: string[] = [];
 
-    constructor(type: number, workspace: string, class_name: string,
+    constructor(lang: string, suffixes: string[], workspace: string, class_name: string,
         template: template_helper,
         create_location: string, source_file_name: string, header_file_name: string, unittest_file_name: string,
         variables?: { [key: string]: string })
     {
-        this.gens_class = (type & 1) != 0;
-        this.gens_unittest = (type & 2) != 0;
+        this.lang = lang;
+        // this.gens_class = (type & 1) != 0;
+        // this.gens_unittest = (type & 2) != 0;
         this.workspace = workspace;
         this.file_name = class_name;
         this.class_name = class_name;
         this.template = template;
         this.create_location = create_location;
-        this.header_file = header_file_name;
-        this.source_file = source_file_name;
-        this.unittest_file = unittest_file_name;
-        this.header_template_name = header_file_name;
-        this.source_template_name = source_file_name;
-        this.unittest_template_name = unittest_file_name;
+        // this.header_file = header_file_name;
+        // this.source_file = source_file_name;
+        // this.unittest_file = unittest_file_name;
+        // this.header_template_name = header_file_name;
+        // this.source_template_name = source_file_name;
+        // this.unittest_template_name = unittest_file_name;
         this.variables = variables;
+        this.suffixes = suffixes;
+        var template_name = "${FILENAME}"
+        if (variables) {
+            template_name = `\${FILEPREFIX}${template_name}\${FILESUFFIX}`;
+        }
+        suffixes.forEach((suffix: string) => {
+            this.configs.push({
+                template_name: `${template_name}${suffix}`,
+            });
+        });
     }
 
     static exec(cmd: string) : Promise<string|undefined> {
@@ -84,16 +104,16 @@ export class class_creator
 
     async parse()
     {
-        var default_regex           : RegExp = /\${FILENAME}/gi;
-        var camel_regex             : RegExp = /\${CLASSNAME}/gi;
-        var user_regex              : RegExp = /\${USER}/gi;
-        var organization_regex      : RegExp = /\${ORGANIZATION}/gi;
-        var year_regex              : RegExp = /\${YEAR}/gi;
-        var date_regex              : RegExp = /\${DATE}/gi;
-        var header_guard_regex      : RegExp = /\${HEADER_GUARD}/gi;
-        var header_path_regex       : RegExp = /\${HEADER_PATH}/gi;
-        var module_regex            : RegExp = /\${MODULE_INCLUDE}/gi;
-        var namespace_regex         : RegExp = /\${NAMESPACE}/gi;
+        var default_regex           : RegExp = /(\${FILENAME}|FILENAME)/g;
+        var camel_regex             : RegExp = /(\${CLASSNAME}|CLASSNAME)/g;
+        var user_regex              : RegExp = /\${USER}/g;
+        var organization_regex      : RegExp = /\${ORGANIZATION}/g;
+        var year_regex              : RegExp = /\${YEAR}/g;
+        var date_regex              : RegExp = /\${DATE}/g;
+        var header_guard_regex      : RegExp = /(\${HEADER_GUARD}|HEADER_GUARD)/g;
+        var header_path_regex       : RegExp = /(\${HEADER_PATH}|HEADER_PATH)/g;
+        var module_regex            : RegExp = /(\${MODULE_INCLUDE}|MODULE_INCLUDE)/g;
+        var namespace_regex         : RegExp = /(\${NAMESPACE}|NAMESPACE)/g;
 
         const date = new Date();
         const user = await this.exec(`git -C "${this.create_location}" config --get user.name`);
@@ -146,33 +166,52 @@ export class class_creator
         ]
         file_cmds.push(...user_cmds);
 
-        this.source_file = this.execute_replacement(file_cmds, this.source_file);
-        this.header_file = this.execute_replacement(file_cmds, this.header_file);
-        this.unittest_file = this.execute_replacement(file_cmds, this.unittest_file);
+        this.configs.forEach(config => {
+            config.file_name = this.execute_replacement(file_cmds, config.template_name);
+        });
 
+        // this.source_file = this.execute_replacement(file_cmds, this.source_file);
+        // this.header_file = this.execute_replacement(file_cmds, this.header_file);
+        // this.unittest_file = this.execute_replacement(file_cmds, this.unittest_file);
+        let header_config = this.configs.find(it => it.file_name?.endsWith(".h") || it.file_name?.endsWith(".hpp"));
+        let header_file = header_config?.file_name || ""
         const content_cmds: Array<command_replace_model> = [
+            { reg_expression: default_regex, replace_string: regex_commands.default(this.file_name)},
             { reg_expression: camel_regex, replace_string: regex_commands.camel(this.class_name)},
             { reg_expression: year_regex, replace_string: regex_commands.year(date)},
             { reg_expression: date_regex, replace_string: regex_commands.date(date)},
             { reg_expression: user_regex, replace_string: regex_commands.user(user)},
             { reg_expression: organization_regex, replace_string: regex_commands.organization(organization)},
-            { reg_expression: header_guard_regex, replace_string: regex_commands.header_guard(root_dir, this.create_location, this.header_file)},
-            { reg_expression: header_path_regex, replace_string: regex_commands.header_path(root_dir, this.create_location, this.header_file)},
+            { reg_expression: header_guard_regex, replace_string: regex_commands.header_guard(root_dir, this.create_location, header_file)},
+            { reg_expression: header_path_regex, replace_string: regex_commands.header_path(root_dir, this.create_location, header_file)},
             { reg_expression: module_regex, replace_string: regex_commands.module_include(module)},
             { reg_expression: namespace_regex, replace_string: regex_commands.namespace(root_dir, namespace)},
         ]
         content_cmds.push(...user_cmds);
 
-        if (this.gens_class) {
-            this.header_file_content = this.execute_replacement(content_cmds,
-                await this.template.get_template(this.header_template_name));
-            this.source_file_content = this.execute_replacement(content_cmds,
-                await this.template.get_template(this.source_template_name));
-        }
-        if (this.gens_unittest) {
-            this.unittest_file_content = this.execute_replacement(content_cmds,
-                await this.template.get_template(this.unittest_template_name));
-        }
+        this.configs.forEach(async config => {
+            if (config.file_name) {
+                const template_content = await this.template.get_template(this.lang, config.template_name);
+                config.file_content = this.execute_replacement(content_cmds, config.template_name);
+            }
+            config.file_name = this.execute_replacement(file_cmds, config.template_name);
+        });
+        await Promise.all(this.configs.map(config => {
+            this.template.get_template(this.lang, config.template_name).then(template_content => {
+                config.file_content = this.execute_replacement(content_cmds, template_content);
+            });
+        }));
+
+        // if (this.gens_class) {
+        //     this.header_file_content = this.execute_replacement(content_cmds,
+        //         await this.template.get_template(this.lang, this.header_template_name));
+        //     this.source_file_content = this.execute_replacement(content_cmds,
+        //         await this.template.get_template(this.lang, this.source_template_name));
+        // }
+        // if (this.gens_unittest) {
+        //     this.unittest_file_content = this.execute_replacement(content_cmds,
+        //         await this.template.get_template(this.lang, this.unittest_template_name));
+        // }
     }
 
     execute_replacement(replacements: Array<command_replace_model>, execute_on: string)
@@ -183,46 +222,46 @@ export class class_creator
         return execute_on;
     } 
 
-    create_header_file()
-    {
-        var hpp_name = this.create_location+"/"+this.header_file;
-        fs.writeFile(hpp_name, this.header_file_content, function (err)
-        {
-            if (err) {
-                console.error(err);
-                return false;
-            }
-        });
+    // create_header_file()
+    // {
+    //     var hpp_name = this.create_location+"/"+this.header_file;
+    //     fs.writeFile(hpp_name, this.header_file_content, function (err)
+    //     {
+    //         if (err) {
+    //             console.error(err);
+    //             return false;
+    //         }
+    //     });
     
     
-        return true;
-    }
-    create_source_file()
-    {
-        var cpp_path_and_file_name = this.create_location+"/"+this.source_file;
-        fs.writeFile(cpp_path_and_file_name, this.source_file_content, function (err)
-        {
-            if (err) {
-                console.error(err);
-                return false;
-            }
-        });
+    //     return true;
+    // }
+    // create_source_file()
+    // {
+    //     var cpp_path_and_file_name = this.create_location+"/"+this.source_file;
+    //     fs.writeFile(cpp_path_and_file_name, this.source_file_content, function (err)
+    //     {
+    //         if (err) {
+    //             console.error(err);
+    //             return false;
+    //         }
+    //     });
     
-        return true;
-    }
-    create_unittest_file()
-    {
-        var cpp_path_and_file_name = this.create_location+"/"+this.unittest_file;
-        fs.writeFile(cpp_path_and_file_name, this.unittest_file_content, function (err)
-        {
-            if (err) {
-                console.error(err);
-                return false;
-            }
-        });
+    //     return true;
+    // }
+    // create_unittest_file()
+    // {
+    //     var cpp_path_and_file_name = this.create_location+"/"+this.unittest_file;
+    //     fs.writeFile(cpp_path_and_file_name, this.unittest_file_content, function (err)
+    //     {
+    //         if (err) {
+    //             console.error(err);
+    //             return false;
+    //         }
+    //     });
     
-        return true;
-    }
+    //     return true;
+    // }
     create_files()
     {
         if (fs.existsSync(this.create_location)) {
@@ -236,17 +275,29 @@ export class class_creator
             fs.mkdirSync(this.create_location, {recursive: true}); // if the path doesnt exist, just create the directory
     
         let ret = true;
-        let files = [];
-        if (this.gens_class) {
-            ret = ret && this.create_header_file();
-            ret = ret && this.create_source_file();
-            files.push(this.header_file);
-            files.push(this.source_file);
-        }
-        if (this.gens_unittest) {
-            ret = ret && this.create_unittest_file();
-            files.push(this.unittest_file);
-        }
+        let files: string[] = [];
+        this.configs.forEach(config => {
+            if (config.file_name && config.file_content) {
+                const file_path = path.join(this.create_location, config.file_name);
+                fs.writeFile(file_path, config.file_content, function (err) {
+                    if (err) {
+                        console.error(err);
+                        return false;
+                    }
+                });
+                files.push(file_path);
+            }
+        });
+        // if (this.gens_class) {
+        //     ret = ret && this.create_header_file();
+        //     ret = ret && this.create_source_file();
+        //     files.push(this.header_file);
+        //     files.push(this.source_file);
+        // }
+        // if (this.gens_unittest) {
+        //     ret = ret && this.create_unittest_file();
+        //     files.push(this.unittest_file);
+        // }
         return ret ? files: undefined;
     }
 }

@@ -41,6 +41,18 @@ export abstract class vscode_helper
         }
         return true;
     }
+    public static check_dirname(dirname: string | undefined): boolean {
+        if (!dirname) {
+            vscode.window.showErrorMessage("dirname is empty!");
+            return false;
+        }
+        // check if dirname is a valid path in macOS and windows, excludes special chars
+        if (dirname.match(/[^a-zA-Z0-9_\-\.\/]/)) {
+            vscode.window.showErrorMessage("dirname is not a valid path!");
+            return false;
+        }
+        return true;
+    }
     public static workspace(): string | undefined {
         let wfs = vscode.workspace.workspaceFolders;
         if (wfs) {

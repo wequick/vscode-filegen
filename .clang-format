@@ -1,0 +1,41 @@
+# For options, see http://clang.llvm.org/docs/ClangFormatStyleOptions.html
+# Based on Google’s C++ style guide
+# Author: Galen Lin <guangliang.lgl@alibaba-inc.com>
+---
+BasedOnStyle: Google
+# If true, spaces are inserted inside container literals (e.g. ObjC and Javascript array and dict literals). For JSON, use SpaceBeforeJsonColon instead.
+SpacesInContainerLiterals: false
+# The number of characters to use for indentation of ObjC blocks.
+ObjCBlockIndentWidth: 4
+# Break parameters list into lines when there is nested block parameters in a function call.
+ObjCBreakBeforeNestedBlockParam: false
+# Add a space after @property in Objective-C, i.e. use @property (readonly) instead of @property(readonly).
+ObjCSpaceAfterProperty: true
+# Add a space in front of an Objective-C protocol list, i.e. use Foo <Protocol> instead of Foo<Protocol>.
+ObjCSpaceBeforeProtocolList: true
+---
+Language: ObjC
+# Use 100 for ObjC
+ColumnLimit: 100
+# The number of columns to use for indentation.
+IndentWidth: 4
+TabWidth: 4
+---
+Language: Cpp
+# Force pointers to the type for C++.
+DerivePointerAlignment: false
+PointerAlignment: Left
+# Use 80 for Cpp
+ColumnLimit: 80
+# The number of columns to use for indentation.
+IndentWidth: 2
+TabWidth: 2
+---
+Language: JavaScript
+ColumnLimit: 100
+IndentWidth: 2
+TabWidth: 2
+---
+Language: Proto
+# Don't format .proto files.
+DisableFormat: true

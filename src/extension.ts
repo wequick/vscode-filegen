@@ -2,12 +2,14 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as fs from 'fs';
 import { class_creator } from './class_creator';
 import { vscode_helper } from "./vscode_helper";
 import { dir_helper } from "./dir_helper";
 import { template_helper } from './template_helper';
 import { GmockHelper } from './gmock_helper';
 import { gmockStyleFromStr } from './conversions';
+import xcodeproj_helper from './xcodeproj_helper';
 
 const template = new template_helper();
 let kConfig: any = {};
@@ -25,7 +27,8 @@ function makeGmock(): GmockHelper {
   return new GmockHelper(gmockStyle);
 }
 
-async function makeClassGenerator(type: number,
+async function makeClassGenerator(lang: string, 
+    suffixes: string[],
     className: string,
     location: string,
     variables?: { [key: string]: string }) {
@@ -37,14 +40,14 @@ async function makeClassGenerator(type: number,
   var source_file_name     = `${fileName}.cc`;
   var unittest_file_name   = "${FILENAME}_unittest.cc"
   const root = vscode_helper.workspace() || "";
-  var creator = new class_creator(type, root, className, template,
+  var creator = new class_creator(lang, suffixes, root, className, template,
       location, source_file_name, header_file_name, unittest_file_name,
       variables);
   await creator.parse()
   return creator;
 }
 
-async function handleCommand(type: number, args: any) {
+async function handleCreateCommand(lang: string, suffix: string[], args: any) {
   var res = await vscode_helper.create_name_input();
   if(!vscode_helper.can_continue(res)) return; // check for class name
 
@@ -57,16 +60,17 @@ async function handleCommand(type: number, args: any) {
   const className = res as string;
   const location = dir_h.dir();
 
-  const creator = await makeClassGenerator(type, className, location);
+  const creator = await makeClassGenerator(lang, suffix, className, location);
  
   const out = creator.create_files();
   if (out) {
     vscode.window.showInformationMessage(`FileGen: ${out.join('|')} created.`);
-    vscode.workspace.openTextDocument(path.join(location, out[0]))
+    vscode.workspace.openTextDocument(out[0])
       .then(doc => vscode.window.showTextDocument(doc));
   } else {
     vscode.window.showErrorMessage(`FileGen: failed to create files for "${className}".`);
   }
+  return out
 }
 
 async function handleReplaceGmock(args: any) {
@@ -115,7 +119,7 @@ async function handleExtractGmockEq(root: string, args: any) {
   const baseDir = kConfig.gmock?.eqFilePath || "test/test/compare";
   const filePrefix = kConfig.gmock?.eqFilePrefix || "eq_";
   const toDir = path.join(root, baseDir);
-  const creator = await makeClassGenerator(1, fileName, toDir, {
+  const creator = await makeClassGenerator("cpp", [".h", ".cc"], fileName, toDir, {
     FILEPREFIX: filePrefix,
     FILESUFFIX: '',
     H_BODY: hBody,
@@ -158,7 +162,7 @@ async function handleExtractGmockClass(root: string, args: any) {
   const baseDir = kConfig.gmock?.mockFilePath || "test/test/mock";
   const filePrefix = kConfig.gmock?.mockFilePrefix || "mock_";
   const toDir = path.join(root, baseDir);
-  const creator = await makeClassGenerator(1, fileName, toDir, {
+  const creator = await makeClassGenerator("cpp", [".h", ".cc"], fileName, toDir, {
     FILEPREFIX: filePrefix,
     FILESUFFIX: '',
     H_BODY: hBody,
@@ -181,7 +185,11 @@ export async function activate(context: vscode.ExtensionContext) {
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
   const root = vscode_helper.workspace() || "";
-  template.init_templates(path.join(root, 'filegen'));
+  const xcodeproj = new xcodeproj_helper(path.join(context.extensionPath, 'scripts'));
+  template.set_template_paths([
+    path.join(root, 'filegen'),  // user first
+    path.join(context.extensionPath, 'templates'),  // default to built-in templates
+  ]);
   kConfig = await class_creator.loadConfig(root) || {}
   const configWatcher = vscode.workspace.createFileSystemWatcher({
     base: root,
@@ -198,20 +206,20 @@ export async function activate(context: vscode.ExtensionContext) {
     base: root,
     pattern: 'filegen/*'
   }, true, false, false);
-  templateWatcher.onDidChange(uri => template.removeCache(path.basename(uri.fsPath)));
-  templateWatcher.onDidDelete(uri => template.removeCache(path.basename(uri.fsPath)));
+  templateWatcher.onDidChange(uri => template.removeCache(uri.fsPath));
+  templateWatcher.onDidDelete(uri => template.removeCache(uri.fsPath));
 
   context.subscriptions.push(vscode.commands.registerCommand('extension.createClassAndUnitTest', async (args) => {
     // The code you place here will be executed every time your command is executed
-    handleCommand(3, args);
+    handleCreateCommand('cpp', [".h", ".cc", "_unittest.cc"], args);
   }));
   context.subscriptions.push(vscode.commands.registerCommand('extension.createClass', async (args) => {
     // The code you place here will be executed every time your command is executed
-    handleCommand(1, args);
+    handleCreateCommand('cpp', [".h", ".cc"], args);
   }));
   context.subscriptions.push(vscode.commands.registerCommand('extension.createUnitTest', async (args) => {
     // The code you place here will be executed every time your command is executed
-    handleCommand(2, args);
+    handleCreateCommand('cpp', ["_unittest.cc"], args);
   }));
   context.subscriptions.push(vscode.commands.registerCommand('extension.replaceGmock', async (args) => {
     // The code you place here will be executed every time your command is executed
@@ -224,6 +232,66 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(vscode.commands.registerCommand('extension.extractGmockClass', async (args) => {
     // The code you place here will be executed every time your command is executed
     handleExtractGmockClass(root, args);
+  }));
+
+  /// MARK: iOS Development
+  // Swift
+  context.subscriptions.push(vscode.commands.registerCommand('extension.createSwiftClass', async (args) => {
+    handleCreateCommand('swift', [".swift"], args).then(files => {
+      if (files) xcodeproj.add_files(files)
+    });
+  }));
+  // ObjC
+  context.subscriptions.push(vscode.commands.registerCommand('extension.createObjcClass', async (args) => {
+    handleCreateCommand('objc', [".h", ".m"], args).then(files => {
+      if (files) xcodeproj.add_files(files)
+    });
+  }));
+  // ObjCpp
+  context.subscriptions.push(vscode.commands.registerCommand('extension.createObjcppClass', async (args) => {
+    handleCreateCommand('objcpp', [".h", ".mm"], args).then(files => {
+      if (files) xcodeproj.add_files(files)
+    });
+  }));
+  // Create Group
+  context.subscriptions.push(vscode.commands.registerCommand('extension.createXcodeGroup', async (args) => {
+    const dirname = await vscode_helper.create_path_input();
+    if (!dirname) {
+      vscode.window.showErrorMessage("FileGen: dirname is empty!");
+      return;
+    }
+    const location = args.fsPath;
+    if (!location) {
+      vscode.window.showErrorMessage("FileGen: location is empty!");
+      return;
+    }
+    const filepath = path.join(location, dirname as string);
+    if (fs.existsSync(filepath)) {
+      vscode.window.showErrorMessage(`FileGen: ${filepath} already exists.`);
+      return;
+    }
+    fs.mkdirSync(filepath);
+    xcodeproj.add_files([filepath]);
+  }));
+  // Delete
+  context.subscriptions.push(vscode.commands.registerCommand('extension.deleteXcodeFile', async (args) => {
+    const location = args.fsPath;
+    console.log(`deleteFile ${location}`);
+    if (!location) {
+      vscode.window.showErrorMessage("FileGen: location is empty!");
+      return;
+    }
+    if (!fs.existsSync(location)) {
+      vscode.window.showErrorMessage(`FileGen: ${location} not exists.`);
+      return;
+    }
+    xcodeproj.remove_files([location]);
+    const stat = fs.statSync(location);
+    if (stat.isDirectory()) {
+      fs.rmdirSync(location, {recursive: true});
+    } else {
+      fs.unlinkSync(location);
+    }
   }));
 }
 

@@ -7,7 +7,7 @@
   "repository": {
     "url": "https://github.com/wequick/vscode-filegen.git"
   },
-  "version": "1.1.1",
+  "version": "1.1.2",
   "engines": {
     "vscode": "^1.41.0"
   },
@@ -33,6 +33,10 @@
   "contributes": {
     "commands": [
       {
+        "title": "FileGen",
+        "command": "extension.filegen"
+      },
+      {
         "title": "Create C++ Class & UnitTest",
         "command": "extension.createClassAndUnitTest"
       },
@@ -55,21 +59,87 @@
       {
         "title": "FileGen: Extract gmock class",
         "command": "extension.extractGmockClass"
+      },
+      {
+        "title": "Create Swift Class",
+        "command": "extension.createSwiftClass"
+      },
+      {
+        "title": "Create Objc Class (.h, .m)",
+        "command": "extension.createObjcClass"
+      },
+      {
+        "title": "Create Objcpp Class (.h, .mm)",
+        "command": "extension.createObjcppClass"
+      },
+      {
+        "title": "Create Group",
+        "command": "extension.createXcodeGroup"
+      },
+      {
+        "title": "Delete",
+        "command": "extension.deleteXcodeFile"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "file/filegen",
+        "label": "FileGen"
+      },
+      {
+        "id": "file/filegen/cpp",
+        "label": "FileGen: C++"
+      },
+      {
+        "id": "file/filegen/xcode",
+        "label": "FileGen: Xcode"
       }
     ],
     "menus": {
       "explorer/context": [
         {
           "group": "navigation@-2",
+          "submenu": "file/filegen/cpp"
+        },
+        {
+          "group": "navigation@-1",
+          "submenu": "file/filegen/xcode"
+        }
+      ],
+      "file/filegen/cpp": [
+        {
+          "group": "file@0",
           "command": "extension.createClassAndUnitTest"
         },
         {
-          "group": "navigation@-1",
+          "group": "file@1",
           "command": "extension.createClass"
         },
         {
-          "group": "navigation@-1",
+          "group": "file@2",
           "command": "extension.createUnitTest"
+        }
+      ],
+      "file/filegen/xcode": [
+        {
+          "group": "group0@item0",
+          "command": "extension.createSwiftClass"
+        },
+        {
+          "group": "group0@item1",
+          "command": "extension.createObjcClass"
+        },
+        {
+          "group": "group0@item2",
+          "command": "extension.createObjcppClass"
+        },
+        {
+          "group": "group1@item0",
+          "command": "extension.createXcodeGroup"
+        },
+        {
+          "group": "group2@item0",
+          "command": "extension.deleteXcodeFile"
         }
       ],
       "editor/context": [
